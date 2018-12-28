@@ -161,14 +161,19 @@ public class MinMaxRangeCheck extends SECheck {
   private static ProgramState handleNumericalConstant(CheckerContext context, IdentifierTree syntaxNode) {
     ProgramState programState = context.getState();
     Symbol identifier = syntaxNode.symbol();
-    if (isNumericalConstant(identifier)) {
-      SymbolicValue constant = programState.getValue(identifier);
-      if (constant != null) {
-        NumericalConstraint numericalConstraint = programState.getConstraint(constant, NumericalConstraint.class);
-        Optional<Object> constantValue = ((JavaSymbol.VariableJavaSymbol) identifier).constantValue();
-        if (numericalConstraint == null && constantValue.isPresent()) {
-          programState = programState.addConstraint(constant, new NumericalConstraint((Number) constantValue.get()));
-        }
+    if (!isNumericalConstant(identifier)) {
+      return programState;
+    }
+    SymbolicValue constant = programState.getValue(identifier);
+    if (constant == null) {
+      return programState;
+    }
+    NumericalConstraint numericalConstraint = programState.getConstraint(constant, NumericalConstraint.class);
+    Optional<Object> constantValue = ((JavaSymbol.VariableJavaSymbol) identifier).constantValue();
+    if (numericalConstraint == null && constantValue.isPresent()) {
+      Object value = constantValue.get();
+      if (value instanceof Number) {
+        return programState.addConstraint(constant, new NumericalConstraint((Number) value));
       }
     }
     return programState;
